@@ -3,6 +3,7 @@
 
 static char get_piece(int player);
 
+// draw rows x cols board of '.'
 void init_board(Game *g) {
     for (int r = 0; r < ROWS; r++) {
         for (int c = 0; c < COLS; c++) {

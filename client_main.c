@@ -15,10 +15,14 @@ static int prompt_for_column(void) {
     long col;
 
     while (1) {
-        printf("Enter column from 0 - %d: ", COLS - 1);
+        printf("Enter column from 0 - %d (or q to quit): ", COLS - 1);
         fflush(stdout);
 
         if (fgets(line, sizeof(line), stdin) == NULL) {
+            return -1;
+        }
+
+        if (line[0] == 'q' || line[0] == 'Q') {
             return -1;
         }
 
@@ -43,6 +47,29 @@ static int prompt_for_column(void) {
         }
 
         return (int)col;
+    }
+}
+
+static int prompt_for_rematch(void) {
+    char line[100];
+
+    while (1) {
+        printf("Play again? (y/n): ");
+        fflush(stdout);
+
+        if (fgets(line, sizeof(line), stdin) == NULL) {
+            return -1;
+        }
+
+        if (line[0] == 'y' || line[0] == 'Y') {
+            return 1;
+        }
+
+        if (line[0] == 'n' || line[0] == 'N') {
+            return 0;
+        }
+
+        printf("Please enter y or n.\n");
     }
 }
 
@@ -71,14 +98,25 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         int status = handle_server_message(sockfd, &my_player, &current_turn);
-        if (status != 0) {
+        if (status == -1) {
             break;
+        }
+
+        if (status == 1) {
+            int want_rematch = prompt_for_rematch();
+            if (want_rematch == -1) {
+                send_quit(sockfd);
+                break;
+            }
+            send_rematch_response(sockfd, want_rematch);
+            continue;
         }
 
         // if it's this player's turn, prompt for a column
         if (my_player != 0 && current_turn == my_player) {
             int col = prompt_for_column();
             if (col == -1) {
+                send_quit(sockfd);
                 break;
             }
             send_move(sockfd, col);

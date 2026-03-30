@@ -39,6 +39,7 @@ int connect_to_server(const char *host, int port) {
 int handle_server_message(int sockfd, int *my_player, int *current_turn) {
     MsgHeader hdr;
     char board[ROWS][COLS];
+    int rematch = 0;
 
     if (read(sockfd, &hdr, sizeof(hdr)) <= 0) {
         printf("Disconnected from server.\n");
@@ -77,6 +78,14 @@ int handle_server_message(int sockfd, int *my_player, int *current_turn) {
     else if (hdr.type == MSG_INVALID) {
         printf("Invalid move! Please try again.\n");
     }
+    else if (hdr.type == MSG_QUIT) {
+        if (hdr.player != 0) {
+            printf("Player %d quit the game.\n", hdr.player);
+        } else {
+            printf("The session has ended.\n");
+        }
+        return -1;
+    }
     else if (hdr.type == MSG_GAME_OVER) {
         if (hdr.player == 0) {
             printf("Game Over: It was a draw!\n");
@@ -84,6 +93,21 @@ int handle_server_message(int sockfd, int *my_player, int *current_turn) {
             printf("Game Over: Player %d wins!\n", hdr.player);
         }
         return 1;
+    }
+    else if (hdr.type == MSG_REMATCH) {
+        if (hdr.length == sizeof(int)) {
+            if (read(sockfd, &rematch, sizeof(int)) <= 0) {
+                printf("Disconnected from server.\n");
+                return -1;
+            }
+        }
+
+        if (rematch) {
+            printf("Both players accepted the rematch. Starting a new game!\n");
+        } else {
+            printf("Rematch declined. Ending session.\n");
+            return -1;
+        }
     }
     else {
         printf("Unknown message type: %d. Please type a valid message.\n", hdr.type);
@@ -100,4 +124,23 @@ void send_move(int sockfd, int col) {
 
     write(sockfd, &hdr, sizeof(hdr));
     write(sockfd, &col, sizeof(int));
+}
+
+void send_quit(int sockfd) {
+    MsgHeader hdr;
+    hdr.type   = MSG_QUIT;
+    hdr.player = 0;
+    hdr.length = 0;
+
+    write(sockfd, &hdr, sizeof(hdr));
+}
+
+void send_rematch_response(int sockfd, int want_rematch) {
+    MsgHeader hdr;
+    hdr.type   = MSG_REMATCH;
+    hdr.player = 0;
+    hdr.length = sizeof(int);
+
+    write(sockfd, &hdr, sizeof(hdr));
+    write(sockfd, &want_rematch, sizeof(int));
 }

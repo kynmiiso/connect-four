@@ -5,18 +5,20 @@
 
 // message header struct
 typedef struct {
-    int type;           // type of message
-    int player;         // player id
-    int length;         // length of payload (size in bytes)
+    int type;               // type of message
+    int player;             // player id
+    int length;             // length of payload (size in bytes)
 } MsgHeader;
 
-#define MSG_JOIN            1
-#define MSG_JOIN_DONE       2
-#define MSG_WAIT            3
-#define MSG_START           4
-#define MSG_MOVE            5
-#define MSG_INVALID         6
-#define MSG_BOARD           7
-#define MSG_GAME_OVER       8
+#define MSG_JOIN            1   // sent when a player wants to join the game
+#define MSG_JOIN_DONE       2   // sent when the join is complete / player has successfully joined
+#define MSG_WAIT            3   // sent when the client is told to wait for another player
+#define MSG_START           4   // sent when the game is starting
+#define MSG_MOVE            5   // sent when the player sends a move to the server
+#define MSG_INVALID         6   // sent when the input from a player is invalid
+#define MSG_BOARD           7   // sent when the board is to be broadcasted to the client
+#define MSG_GAME_OVER       8   // sent when the game is over (a player has won / draw)
+#define MSG_QUIT            9   // sent when a player quits or disconnects
+#define MSG_REMATCH         10  // used to request or confirm a rematch
 
 #endif

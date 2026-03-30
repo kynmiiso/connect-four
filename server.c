@@ -46,17 +46,21 @@ int read_message(int fd, MsgHeader *hdr, void *buf) {
     // read the payload (if any)
     if (hdr->length > 0 && buf != NULL) {
         n = read(fd, buf, hdr->length);
-        if (n <= 0) return -1;
+        if (n <= 0) {
+            return -1;
+        }
     }
     return 0;
 }
 
 int send_message(int fd, int type, int player, const void *buf, int len) {
+    // header setup
     MsgHeader hdr;
     hdr.type = type;
     hdr.length = len;
     hdr.player = player;
 
+    // write message to the client specified
     if (write(fd, &hdr, sizeof(hdr)) == -1) {
         return -1;
     }
@@ -91,7 +95,7 @@ int handle_join(int client_fd, int player) {
 int handle_move(Game *g, int client_fd, int player, int col) {
     int result = apply_move(g, player, col);
     if (result == 0) {
-        // column is invalid or full, send message that it is an invalid move
+        // column is invalid or full, so send message that it is an invalid move
         send_message(client_fd, MSG_INVALID, player, NULL, 0);
         return 0;
     }
@@ -99,12 +103,42 @@ int handle_move(Game *g, int client_fd, int player, int col) {
     return 1;
 }
 
+int handle_rematch(int fd1, int fd2) {
+    MsgHeader hdr;
+    int want1 = 0;
+    int want2 = 0;
+
+    if (read_message(fd1, &hdr, &want1) == -1) {
+        return -1;
+    }
+    if (hdr.type == MSG_QUIT) {
+        return 0;
+    }
+    if (hdr.type != MSG_REMATCH || hdr.length != sizeof(int)) {
+        return 0;
+    }
+
+    if (read_message(fd2, &hdr, &want2) == -1) {
+        return -1;
+    }
+    if (hdr.type == MSG_QUIT) {
+        return 0;
+    }
+    if (hdr.type != MSG_REMATCH || hdr.length != sizeof(int)) {
+        return 0;
+    }
+
+    return want1 && want2;
+}
+
 void broadcast_board(int fd1, int fd2, const Game *g, int current_turn) {
+    // broadcast the board to both client streams
     send_message(fd1, MSG_BOARD, current_turn, g->board, sizeof(g->board));
     send_message(fd2, MSG_BOARD, current_turn, g->board, sizeof(g->board));
 }
 
 void disconnect_client(int *fd) {
+    // handle client disconnection
     if (*fd >= 0) {
         close(*fd);
         *fd = -1;
