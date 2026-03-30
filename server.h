@@ -1,0 +1,17 @@
+#ifndef SERVER_H
+#define SERVER_H
+
+#include <stdint.h>
+#include "protocol.h"
+#include "game.h"
+
+int setup_server_socket(int port);
+void accept_client(int listenfd, int *client_fd);
+int read_message(int fd, MsgHeader *hdr, void *buf);
+int send_message(int fd, uint8_t type, uint8_t player, const void *buf, uint16_t len);
+void handle_join(int client_fd);
+void handle_move(Game *g, int client_fd, int player, int col);
+void broadcast_board(int fd1, int fd2, const Game *g, int current_turn);
+void disconnect_client(int *fd);
+
+#endif
