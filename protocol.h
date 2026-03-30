@@ -19,6 +19,6 @@ typedef struct {
 #define MSG_BOARD           7   // sent when the board is to be broadcasted to the client
 #define MSG_GAME_OVER       8   // sent when the game is over (a player has won / draw)
 #define MSG_QUIT            9   // sent when a player quits or disconnects
-#define MSG_REMATCH         10  // used to request or confirm a rematch
+#define MSG_REMATCH         10  // sent when the server prompts the player to request or confirm a rematch
 
 #endif
