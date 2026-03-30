@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "game.h"
 
+static char get_piece(int player);
+
 void init_board(Game *g) {
     for (int r = 0; r < ROWS; r++) {
         for (int c = 0; c < COLS; c++) {
