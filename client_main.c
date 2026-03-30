@@ -16,7 +16,6 @@ static int prompt_for_column(void) {
 
     while (1) {
         printf("Enter column from 0 - %d (or q to quit): ", COLS - 1);
-        fflush(stdout);
 
         if (fgets(line, sizeof(line), stdin) == NULL) {
             return -1;
@@ -55,7 +54,6 @@ static int prompt_for_rematch(void) {
 
     while (1) {
         printf("Play again? (y/n): ");
-        fflush(stdout);
 
         if (fgets(line, sizeof(line), stdin) == NULL) {
             return -1;
@@ -74,11 +72,16 @@ static int prompt_for_rematch(void) {
 }
 
 int main(int argc, char *argv[]) {
+    // disable the default buffering (each character is printed to stdout as soon as printf is called)
+    setbuf(stdout, NULL);
+
+    // if the user did not provide exactly one argument along with ./client, print a usage message
     if (argc != 2) {
         printf("Usage: %s <host>\n", argv[0]);
         return 1;
     }
 
+    // handle failed connect to server
     int sockfd = connect_to_server(argv[1], PORT);
     if (sockfd == -1) {
         printf("Failed to connect to server.\n");
@@ -102,6 +105,7 @@ int main(int argc, char *argv[]) {
             break;
         }
 
+        // handle prompting for a rematch
         if (status == 1) {
             int want_rematch = prompt_for_rematch();
             if (want_rematch == -1) {
@@ -112,7 +116,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // if it's this player's turn, prompt for a column
+        // if it's this player's turn, prompt their input for a column index
         if (my_player != 0 && current_turn == my_player) {
             int col = prompt_for_column();
             if (col == -1) {
