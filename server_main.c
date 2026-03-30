@@ -61,7 +61,9 @@ int main() {
                 break;
             }
 
-            handle_move(&g, client_fd, player, col);
+            if (handle_move(&g, client_fd, player, col) == 0) {
+                continue;
+            }
 
             if (check_win(&g, player)) {
                 broadcast_board(fd1, fd2, &g, player);
@@ -75,8 +77,8 @@ int main() {
                 break;
             }
 
-            broadcast_board(fd1, fd2, &g, 1 - current + 1);
             current = 1 - current;  // switch turns
+            broadcast_board(fd1, fd2, &g, current + 1);
         }
 
         disconnect_client(&fd1);

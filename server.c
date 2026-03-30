@@ -88,12 +88,15 @@ int handle_join(int client_fd, int player) {
     return 0;
 }
 
-void handle_move(Game *g, int client_fd, int player, int col) {
+int handle_move(Game *g, int client_fd, int player, int col) {
     int result = apply_move(g, player, col);
     if (result == 0) {
         // column is invalid or full, send message that it is an invalid move
         send_message(client_fd, MSG_INVALID, player, NULL, 0);
+        return 0;
     }
+
+    return 1;
 }
 
 void broadcast_board(int fd1, int fd2, const Game *g, int current_turn) {
