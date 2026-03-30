@@ -66,7 +66,7 @@ int main() {
             }
 
             if (check_win(&g, player)) {
-                broadcast_board(fd1, fd2, &g, player);
+                broadcast_board(fd1, fd2, &g, 0);
                 send_message(fd1, MSG_GAME_OVER, player, NULL, 0);
                 send_message(fd2, MSG_GAME_OVER, player, NULL, 0);
                 break;

@@ -70,7 +70,9 @@ int handle_server_message(int sockfd, int *my_player, int *current_turn) {
             }
             printf("\n");
         }
-        printf("Turn: Player %d\n", hdr.player);
+        if (hdr.player != 0) {
+            printf("Turn: Player %d\n", hdr.player);
+        }
     }
     else if (hdr.type == MSG_INVALID) {
         printf("Invalid move! Please try again.\n");
