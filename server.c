@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "game.h"
-#include "protocol.h"
+#include "server.h"
 
 int setup_server_socket(int port) {
     struct sockaddr_in addr;
@@ -20,7 +20,7 @@ int setup_server_socket(int port) {
     int opt = 1;
     setsockopt(listen_soc, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    if (bind(listen_soc, (struct sockaddr *) &addr, sizeof(sockaddr_in)) == -1) {
+    if (bind(listen_soc, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) == -1) {
         close(listen_soc);
         return -1;
     }
@@ -70,22 +70,27 @@ int send_message(int fd, int type, int player, const void *buf, int len) {
     return 0;
 }
 
-void handle_join(int client_fd) {
+int handle_join(int client_fd, int player) {
     MsgHeader hdr;
 
     // read the request to join from the client
     if (read_message(client_fd, &hdr, NULL) == -1 || hdr.type != MSG_JOIN) {
         disconnect_client(&client_fd);
-        return;
+        return -1;
     }
 
-    // handle the join by sending a message
-    send_message(client_fd, MSG_JOIN_DONE, hdr.player, NULL, 0);
+    // confirm the player number assigned by the server
+    if (send_message(client_fd, MSG_JOIN_DONE, player, NULL, 0) == -1) {
+        disconnect_client(&client_fd);
+        return -1;
+    }
+
+    return 0;
 }
 
 void handle_move(Game *g, int client_fd, int player, int col) {
     int result = apply_move(g, player, col);
-    if (result == -1) {
+    if (result == 0) {
         // column is invalid or full, send message that it is an invalid move
         send_message(client_fd, MSG_INVALID, player, NULL, 0);
     }

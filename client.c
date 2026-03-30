@@ -36,27 +36,33 @@ int connect_to_server(const char *host, int port) {
     return sockfd;
 }
 
-void handle_server_message(int sockfd) {
+int handle_server_message(int sockfd, int *my_player, int *current_turn) {
     MsgHeader hdr;
     char board[ROWS][COLS];
 
     if (read(sockfd, &hdr, sizeof(hdr)) <= 0) {
         printf("Disconnected from server.\n");
-        return;
+        return -1;
     }
 
     if (hdr.type == MSG_JOIN_DONE) {
+        *my_player = hdr.player;
         printf("You have joined the game as player %d.\n", hdr.player);
     }
     else if (hdr.type == MSG_WAIT) {
         printf("Waiting for another player to join...\n");
     }
     else if (hdr.type == MSG_START) {
+        *my_player = hdr.player;
         printf("Game has started! You are player %d.\n", hdr.player);
     }
     else if (hdr.type == MSG_BOARD) {
-        // read the board information and print it
-        read(sockfd, board, sizeof(board));
+        if (read(sockfd, board, sizeof(board)) <= 0) {
+            printf("Disconnected from server.\n");
+            return -1;
+        }
+
+        *current_turn = hdr.player;
         printf("\n");
         for (int r = 0; r < ROWS; r++) {
             for (int c = 0; c < COLS; c++) {
@@ -75,10 +81,13 @@ void handle_server_message(int sockfd) {
         } else {
             printf("Game Over: Player %d wins!\n", hdr.player);
         }
-    } 
+        return 1;
+    }
     else {
         printf("Unknown message type: %d. Please type a valid message.\n", hdr.type);
     }
+
+    return 0;
 }
 
 void send_move(int sockfd, int col) {

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include "server.h"
 #include "protocol.h"
 #include "game.h"
 
@@ -21,10 +22,19 @@ int main() {
 
         printf("Waiting for player 1...\n");
         accept_client(listenfd, &fd1);
+        if (handle_join(fd1, 1) == -1) {
+            disconnect_client(&fd1);
+            continue;
+        }
         send_message(fd1, MSG_WAIT, 1, NULL, 0);
 
         printf("Waiting for player 2...\n");
         accept_client(listenfd, &fd2);
+        if (handle_join(fd2, 2) == -1) {
+            disconnect_client(&fd1);
+            disconnect_client(&fd2);
+            continue;
+        }
 
         // send message to both players that the game is starting
         send_message(fd1, MSG_START, 1, NULL, 0);
@@ -41,7 +51,6 @@ int main() {
         while (1) {
             int player = current + 1;               // current player is 1 or 2
             int client_fd = fds[current];
-            int other_fd = fds[1 - current];
 
             // read the move from the current player
             MsgHeader hdr;

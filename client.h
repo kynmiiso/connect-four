@@ -2,7 +2,7 @@
 #define CLIENT_H
 
 int connect_to_server(const char *host, int port);
-void handle_server_message(int sockfd);
+int handle_server_message(int sockfd, int *my_player, int *current_turn);
 void send_move(int sockfd, int col);
 
 #endif

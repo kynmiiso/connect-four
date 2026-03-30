@@ -31,16 +31,13 @@ int main(int argc, char *argv[]) {
     int current_turn = 0;
 
     while (1) {
-        handle_server_message(sockfd);
-
-        // read the player id
-        if (my_player == 0) {
-            // player set inside handle_server_message — 
-            // you may want to return player from it instead
+        int status = handle_server_message(sockfd, &my_player, &current_turn);
+        if (status != 0) {
+            break;
         }
 
         // if it's this player's turn, prompt for a column
-        if (current_turn == my_player) {
+        if (my_player != 0 && current_turn == my_player) {
             int col;
             printf("Enter column from 0 - 6: ");
             scanf("%d", &col);
