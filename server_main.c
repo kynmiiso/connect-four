@@ -9,11 +9,14 @@
 #endif
 
 int main() {
+    // socket setup
     int listenfd = setup_server_socket(PORT);
+
     if (listenfd == -1) {
         printf("Failed to set up server socket.\n");
         return 1;
     }
+
     printf("Server listening on port %d\n", PORT);
 
     while (1) {
@@ -66,6 +69,7 @@ int main() {
                     break;
                 }
 
+                // send the quit message
                 if (hdr.type == MSG_QUIT) {
                     printf("Player %d quit the game.\n", player);
                     send_message(fds[other], MSG_QUIT, player, NULL, 0);
@@ -73,15 +77,18 @@ int main() {
                     break;
                 }
 
+                // send the move message
                 if (hdr.type != MSG_MOVE) {
                     send_message(client_fd, MSG_INVALID, player, NULL, 0);
                     continue;
                 }
 
+                // handle the actual movement logic
                 if (handle_move(&g, client_fd, player, col) == 0) {
                     continue;
                 }
 
+                // check if a player has won or a draw has occurred (game logic)
                 if (check_win(&g, player)) {
                     broadcast_board(fd1, fd2, &g, 0);
                     send_message(fd1, MSG_GAME_OVER, player, NULL, 0);
@@ -108,6 +115,7 @@ int main() {
                 break;
             }
 
+            // handle rematch logic and send rematch messages when both players said yes to a rematch
             int rematch = handle_rematch(fd1, fd2);
             if (rematch == 1) {
                 int yes = 1;
@@ -116,6 +124,7 @@ int main() {
                 continue;
             }
 
+            // handle sending rematch messages if a rematch does not happen (either a player disconnected or said no)
             if (rematch == -1) {
                 printf("A player disconnected during the rematch prompt.\n");
                 send_message(fd1, MSG_QUIT, 0, NULL, 0);

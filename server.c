@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include "server.h"
 
+// setup the socket for the server
 int setup_server_socket(int port) {
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
@@ -103,27 +104,34 @@ int handle_move(Game *g, int client_fd, int player, int col) {
     return 1;
 }
 
+// handle a rematch 
 int handle_rematch(int fd1, int fd2) {
     MsgHeader hdr;
-    int want1 = 0;
-    int want2 = 0;
 
+    int want1 = 0; // want1 = 1 => player 1 wants a rematch
+    int want2 = 0; // want2 = 1 => player 2 wants a rematch
+
+    // read player 1's response
     if (read_message(fd1, &hdr, &want1) == -1) {
-        return -1;
+        return -1; 
     }
+    // handle player 1 quit
     if (hdr.type == MSG_QUIT) {
         return 0;
     }
+    // if the message from player 1 is not a valid rematch response then no rematch
     if (hdr.type != MSG_REMATCH || hdr.length != sizeof(int)) {
         return 0;
     }
-
+    // read player 2's response
     if (read_message(fd2, &hdr, &want2) == -1) {
         return -1;
     }
+    // handle player 2 quit
     if (hdr.type == MSG_QUIT) {
         return 0;
     }
+    // if the message from player 2 is not a valid rematch response then no rematch
     if (hdr.type != MSG_REMATCH || hdr.length != sizeof(int)) {
         return 0;
     }

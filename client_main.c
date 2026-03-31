@@ -17,29 +17,35 @@ static int prompt_for_column(void) {
     while (1) {
         printf("Enter column from 0 - %d (or q to quit): ", COLS - 1);
 
+        // read the player's input
         if (fgets(line, sizeof(line), stdin) == NULL) {
             return -1;
         }
 
+        // handle player quitting by pressing q
         if (line[0] == 'q' || line[0] == 'Q') {
             return -1;
         }
 
+        // convert the input string to a number
         col = strtol(line, &endptr, 10);
         if (endptr == line) {
             printf("Please enter a number.\n");
             continue;
         }
 
+        // skip spaces after the number
         while (*endptr == ' ' || *endptr == '\t') {
             endptr++;
         }
 
+        // handle extra characters
         if (*endptr != '\n' && *endptr != '\0') {
             printf("Please enter just one number.\n");
             continue;
         }
 
+        // make sure the column is within the board
         if (col < 0 || col >= COLS) {
             printf("Column must be between 0 and %d.\n", COLS - 1);
             continue;
@@ -55,18 +61,22 @@ static int prompt_for_rematch(void) {
     while (1) {
         printf("Play again? (y/n): ");
 
+        // read the player's rematch response 
         if (fgets(line, sizeof(line), stdin) == NULL) {
             return -1;
         }
 
+        // yes -> play another game
         if (line[0] == 'y' || line[0] == 'Y') {
             return 1;
         }
 
+        // no -> end the game session
         if (line[0] == 'n' || line[0] == 'N') {
             return 0;
         }
 
+        // reject input besides y or n
         printf("Please enter y or n.\n");
     }
 }
