@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include "server.h"
 #include "protocol.h"
@@ -59,10 +60,12 @@ int main() {
                 int other = 1 - current;
                 int client_fd = fds[current];
 
-                // read the move from the current player
+                // read the next message from the current player
                 MsgHeader hdr;
+                char payload[MAX_CHAT_LEN];
                 int col;
-                if (read_message(client_fd, &hdr, &col) == -1) {
+
+                if (read_message(client_fd, &hdr, payload, sizeof(payload)) == -1) {
                     printf("Player %d disconnected.\n", player);
                     send_message(fds[other], MSG_QUIT, player, NULL, 0);
                     session_active = 0;
@@ -77,11 +80,21 @@ int main() {
                     break;
                 }
 
-                // send the move message
-                if (hdr.type != MSG_MOVE) {
+                // send chat messages to the other player without ending the turn
+                if (hdr.type == MSG_CHAT) {
+                    payload[MAX_CHAT_LEN - 1] = '\0';
+                    printf("Player %d says: %s\n", player, payload);
+                    send_message(fds[other], MSG_CHAT, player, payload, hdr.length);
+                    continue;
+                }
+
+                // handle the move message
+                if (hdr.type != MSG_MOVE || hdr.length != sizeof(int)) {
                     send_message(client_fd, MSG_INVALID, player, NULL, 0);
                     continue;
                 }
+
+                memcpy(&col, payload, sizeof(int));
 
                 // handle the actual movement logic
                 if (handle_move(&g, client_fd, player, col) == 0) {

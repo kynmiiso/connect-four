@@ -5,6 +5,36 @@
 #include <netinet/in.h>
 #include "server.h"
 
+static int read_all(int fd, void *buf, int count) {
+    int total = 0;
+    char *ptr = buf;
+
+    while (total < count) {
+        int n = (int)read(fd, ptr + total, count - total);
+        if (n <= 0) {
+            return n;
+        }
+        total += n;
+    }
+
+    return total;
+}
+
+static int write_all(int fd, const void *buf, int count) {
+    int total = 0;
+    const char *ptr = buf;
+
+    while (total < count) {
+        int n = (int)write(fd, ptr + total, count - total);
+        if (n <= 0) {
+            return n;
+        }
+        total += n;
+    }
+
+    return total;
+}
+
 // setup the socket for the server
 int setup_server_socket(int port) {
     struct sockaddr_in addr;
@@ -37,17 +67,19 @@ void accept_client(int listenfd, int *client_fd) {
     *client_fd = accept(listenfd, NULL, NULL);
 }
 
-int read_message(int fd, MsgHeader *hdr, void *buf) {
+int read_message(int fd, MsgHeader *hdr, void *buf, int buf_size) {
     // read header with a fixed size
-    int n = read(fd, hdr, sizeof(*hdr));
-    if (n <= 0) {
+    if (read_all(fd, hdr, sizeof(*hdr)) <= 0) {
         return -1;
     }
 
     // read the payload (if any)
-    if (hdr->length > 0 && buf != NULL) {
-        n = read(fd, buf, hdr->length);
-        if (n <= 0) {
+    if (hdr->length > 0) {
+        if (buf == NULL || hdr->length > buf_size) {
+            return -1;
+        }
+
+        if (read_all(fd, buf, hdr->length) <= 0) {
             return -1;
         }
     }
@@ -62,12 +94,12 @@ int send_message(int fd, int type, int player, const void *buf, int len) {
     hdr.player = player;
 
     // write message to the client specified
-    if (write(fd, &hdr, sizeof(hdr)) == -1) {
+    if (write_all(fd, &hdr, sizeof(hdr)) <= 0) {
         return -1;
     }
 
     if (len > 0 && buf != NULL) {
-        if (write(fd, buf, len) == -1) {
+        if (write_all(fd, buf, len) <= 0) {
             return -1;
         }
     }
@@ -79,7 +111,7 @@ int handle_join(int client_fd, int player) {
     MsgHeader hdr;
 
     // read the request to join from the client
-    if (read_message(client_fd, &hdr, NULL) == -1 || hdr.type != MSG_JOIN) {
+    if (read_message(client_fd, &hdr, NULL, 0) == -1 || hdr.type != MSG_JOIN) {
         disconnect_client(&client_fd);
         return -1;
     }
@@ -112,7 +144,7 @@ int handle_rematch(int fd1, int fd2) {
     int want2 = 0; // want2 = 1 => player 2 wants a rematch
 
     // read player 1's response
-    if (read_message(fd1, &hdr, &want1) == -1) {
+    if (read_message(fd1, &hdr, &want1, sizeof(want1)) == -1) {
         return -1; 
     }
     // handle player 1 quit
@@ -124,7 +156,7 @@ int handle_rematch(int fd1, int fd2) {
         return 0;
     }
     // read player 2's response
-    if (read_message(fd2, &hdr, &want2) == -1) {
+    if (read_message(fd2, &hdr, &want2, sizeof(want2)) == -1) {
         return -1;
     }
     // handle player 2 quit

@@ -7,7 +7,7 @@
 
 int setup_server_socket(int port);
 void accept_client(int listenfd, int *client_fd);
-int read_message(int fd, MsgHeader *hdr, void *buf);
+int read_message(int fd, MsgHeader *hdr, void *buf, int buf_size);
 int send_message(int fd, int type, int player, const void *buf, int len);
 int handle_join(int client_fd, int player);
 int handle_move(Game *g, int client_fd, int player, int col);

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "client.h"
 #include "protocol.h"
@@ -9,13 +10,13 @@
 #define PORT 30000
 #endif
 
-static int prompt_for_column(void) {
-    char line[100];
+static int prompt_for_column(int sockfd) {
+    char line[MAX_CHAT_LEN];
     char *endptr;
     long col;
 
     while (1) {
-        printf("Enter column from 0 - %d (or q to quit): ", COLS - 1);
+        printf("Enter column from 0 - %d, /chat <message>, or q to quit: ", COLS - 1);
 
         // read the player's input
         if (fgets(line, sizeof(line), stdin) == NULL) {
@@ -27,10 +28,29 @@ static int prompt_for_column(void) {
             return -1;
         }
 
+        // let the player send a quick chat message before making a move
+        if (strncmp(line, "/chat ", 6) == 0) {
+            char *message = line + 6;
+            size_t len = strlen(message);
+
+            while (len > 0 && (message[len - 1] == '\n' || message[len - 1] == '\r')) {
+                message[--len] = '\0';
+            }
+
+            if (len == 0) {
+                printf("Chat message cannot be empty.\n");
+                continue;
+            }
+
+            send_chat_message(sockfd, message);
+            printf("You: %s\n", message);
+            continue;
+        }
+
         // convert the input string to a number
         col = strtol(line, &endptr, 10);
         if (endptr == line) {
-            printf("Please enter a number.\n");
+            printf("Please enter a number or /chat <message>.\n");
             continue;
         }
 
@@ -128,7 +148,7 @@ int main(int argc, char *argv[]) {
 
         // if it's this player's turn, prompt their input for a column index
         if (my_player != 0 && current_turn == my_player) {
-            int col = prompt_for_column();
+            int col = prompt_for_column(sockfd);
             if (col == -1) {
                 send_quit(sockfd);
                 break;
