@@ -14,7 +14,8 @@ int main() {
     int listenfd = setup_server_socket(PORT);
 
     if (listenfd == -1) {
-        printf("Failed to set up server socket.\n");
+        perror("setup_server_socket");
+        printf("Failed to set up server socket on port %d.\n", PORT);
         return 1;
     }
 
