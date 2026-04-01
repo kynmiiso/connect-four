@@ -9,7 +9,7 @@
 #include "game.h"
 
 #ifndef PORT
-#define PORT 30000
+#define PORT 4242
 #endif
 
 // track one game session
@@ -310,8 +310,12 @@ int main() {
 
             // clean up ended sessions
             if (sess->state == -1) {
-                disconnect_client(&sess->client1);
-                disconnect_client(&sess->client2);
+                if (sess->client1.fd >= 0) {
+                    disconnect_client(&sess->client1);
+                } 
+                if (sess->client2.fd >= 0) {
+                    disconnect_client(&sess->client2);
+                } 
                 if (i < session_count - 1) {
                     memmove(&sessions[i], &sessions[i + 1],
                             (session_count - i - 1) * sizeof(GameSession));
