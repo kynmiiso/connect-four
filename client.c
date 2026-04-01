@@ -83,8 +83,7 @@ int handle_server_message(int sockfd, int *my_player, int *current_turn) {
 
     // server lets player know their player id
     if (hdr.type == MSG_JOIN_DONE) {
-        *my_player = hdr.player;
-        printf("You have joined the game as player %d.\n", hdr.player);
+        printf("Waiting for another player to join...\n");
     }
     // wait for second player to connect
     else if (hdr.type == MSG_WAIT) {

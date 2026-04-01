@@ -230,7 +230,7 @@ int handle_join_nb(ClientState *client) {
         return -1;
     }
 
-    if (send_message_nb(client, MSG_JOIN_DONE, client->player, NULL, 0) == -1) {
+    if (send_message_nb(client, MSG_JOIN_DONE, 0, NULL, 0) == -1) {
         disconnect_client(client);
         return -1;
     }
